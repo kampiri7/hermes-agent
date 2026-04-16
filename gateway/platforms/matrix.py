@@ -323,6 +323,7 @@ class MatrixAdapter(BasePlatformAdapter):
         device_keys_map = getattr(resp, "device_keys", {}) or {}
         our_user_devices = device_keys_map.get(str(client.mxid)) or {}
         our_keys = our_user_devices.get(str(client.device_id))
+        local_ed25519 = olm.account.identity_keys.get("ed25519")
 
         if not our_keys:
             logger.warning("Matrix: device keys missing from server — re-uploading")
@@ -331,6 +332,30 @@ class MatrixAdapter(BasePlatformAdapter):
                 await olm.share_keys()
             except Exception as exc:
                 logger.error("Matrix: failed to re-upload device keys: %s", exc)
+                return False
+            # Re-verify: server may accept OTKs but silently ignore device
+            # keys when identity keys are immutable for the existing device.
+            try:
+                resp2 = await client.query_keys({client.mxid: [client.device_id]})
+                dk2 = getattr(resp2, "device_keys", {}) or {}
+                ud2 = dk2.get(str(client.mxid)) or {}
+                k2 = ud2.get(str(client.device_id))
+                if k2:
+                    server_ed2 = None
+                    for kid, kval in (getattr(k2, "keys", {}) or {}).items():
+                        if str(kid).startswith("ed25519:"):
+                            server_ed2 = str(kval)
+                            break
+                    if server_ed2 != local_ed25519:
+                        logger.error(
+                            "Matrix: device %s has immutable identity keys that "
+                            "don't match this installation. Generate a new access "
+                            "token with a fresh device.",
+                            client.device_id,
+                        )
+                        return False
+            except Exception as exc:
+                logger.error("Matrix: post-upload key verification failed: %s", exc)
                 return False
             return True
 
@@ -342,7 +367,6 @@ class MatrixAdapter(BasePlatformAdapter):
             if str(key_id).startswith("ed25519:"):
                 server_ed25519 = str(key_value)
                 break
-        local_ed25519 = olm.account.identity_keys.get("ed25519")
 
         if server_ed25519 != local_ed25519:
             if olm.account.shared:
@@ -384,6 +408,29 @@ class MatrixAdapter(BasePlatformAdapter):
                     client.device_id,
                     exc,
                 )
+                return False
+            # Re-verify after stale-key re-upload.
+            try:
+                resp2 = await client.query_keys({client.mxid: [client.device_id]})
+                dk2 = getattr(resp2, "device_keys", {}) or {}
+                ud2 = dk2.get(str(client.mxid)) or {}
+                k2 = ud2.get(str(client.device_id))
+                if k2:
+                    server_ed2 = None
+                    for kid, kval in (getattr(k2, "keys", {}) or {}).items():
+                        if str(kid).startswith("ed25519:"):
+                            server_ed2 = str(kval)
+                            break
+                    if server_ed2 != local_ed25519:
+                        logger.error(
+                            "Matrix: device %s has immutable identity keys that "
+                            "don't match this installation. Generate a new access "
+                            "token with a fresh device.",
+                            client.device_id,
+                        )
+                        return False
+            except Exception as exc:
+                logger.error("Matrix: post-upload key verification failed: %s", exc)
                 return False
 
         return True

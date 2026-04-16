@@ -824,6 +824,41 @@ class TestMatrixAccessTokenAuth:
         await adapter.disconnect()
 
 
+class TestDeviceKeyReVerification:
+    @pytest.mark.asyncio
+    async def test_verify_fails_when_server_keys_mismatch_after_upload(self):
+        """share_keys() succeeds but server still has old keys -> should return False."""
+        adapter = _make_adapter()
+
+        mock_client = MagicMock()
+        mock_client.mxid = "@bot:example.org"
+        mock_client.device_id = "TESTDEVICE"
+
+        # First query: keys missing -> triggers share_keys
+        # Second query: keys still don't match -> should fail
+        mock_keys_missing = MagicMock()
+        mock_keys_missing.device_keys = {"@bot:example.org": {}}
+
+        mock_keys_mismatch = MagicMock()
+        mock_device = MagicMock()
+        mock_device.keys = {"ed25519:TESTDEVICE": "server_old_key"}
+        mock_keys_mismatch.device_keys = {"@bot:example.org": {"TESTDEVICE": mock_device}}
+
+        mock_client.query_keys = AsyncMock(side_effect=[mock_keys_missing, mock_keys_mismatch])
+
+        mock_olm = MagicMock()
+        mock_olm.account = MagicMock()
+        mock_olm.account.shared = False
+        mock_olm.account.identity_keys = {"ed25519": "local_new_key"}
+        mock_olm.share_keys = AsyncMock()
+
+        from gateway.platforms.matrix import MatrixAdapter
+        result = await adapter._verify_device_keys_on_server(mock_client, mock_olm)
+
+        assert result is False
+        mock_olm.share_keys.assert_awaited_once()
+
+
 class TestMatrixE2EEHardFail:
     """connect() must refuse to start when E2EE is requested but deps are missing."""
 
