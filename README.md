@@ -70,9 +70,11 @@ Key configuration options:
 | `OPENAI_API_KEY` | OpenAI-compatible API key | *(required)* |
 | `OPENAI_BASE_URL` | Base URL for OpenAI-compatible API | `https://api.openai.com/v1` |
 | `MAX_ITERATIONS` | Max agent loop iterations | `20` |
-| `TEMPERATURE` | Sampling temperature | `0.7` |
+| `TEMPERATURE` | Sampling temperature | `0.5` |
 
 > **Personal note:** I bumped `MAX_ITERATIONS` default from `10` to `20` — I found the agent would frequently hit the limit on moderately complex tasks before finishing.
+
+> **Personal note:** I lowered `TEMPERATURE` from `0.7` to `0.5` — at 0.7 the agent would sometimes go off on tangents mid-task; 0.5 feels more focused without being too deterministic.
 
 See `.env.example` for the full list of configuration options.
 
@@ -98,9 +100,5 @@ hermes-agent/
 │   ├── agent.py           # Main agent loop
 │   ├── tools/             # Built-in tools
 │   ├── memory/            # Memory backends
-│   ├── llm/               # LLM client wrappers
-│   └── config.py          # Configuration management
-├── tests/                 # Test suite
-├── docs/                  # Documentation
-├── .env.example           # E
+│   ├── llm/               # LLM client wrapp
 ```
