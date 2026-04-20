@@ -69,8 +69,10 @@ Key configuration options:
 | `INFERENCE_BACKEND` | Backend for inference (`openai`, `ollama`, `vllm`) | `openai` |
 | `OPENAI_API_KEY` | OpenAI-compatible API key | *(required)* |
 | `OPENAI_BASE_URL` | Base URL for OpenAI-compatible API | `https://api.openai.com/v1` |
-| `MAX_ITERATIONS` | Max agent loop iterations | `10` |
+| `MAX_ITERATIONS` | Max agent loop iterations | `20` |
 | `TEMPERATURE` | Sampling temperature | `0.7` |
+
+> **Personal note:** I bumped `MAX_ITERATIONS` default from `10` to `20` — I found the agent would frequently hit the limit on moderately complex tasks before finishing.
 
 See `.env.example` for the full list of configuration options.
 
@@ -100,26 +102,5 @@ hermes-agent/
 │   └── config.py          # Configuration management
 ├── tests/                 # Test suite
 ├── docs/                  # Documentation
-├── .env.example           # Example environment configuration
-├── docker-compose.yml     # Docker Compose configuration
-├── Dockerfile             # Container definition
-└── requirements.txt       # Python dependencies
+├── .env.example           # E
 ```
-
-## Contributing
-
-Contributions are welcome! Please check out our [issue templates](.github/ISSUE_TEMPLATE/) before opening an issue.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/my-feature`)
-3. Commit your changes
-4. Push to the branch and open a Pull Request
-
-## License
-
-This project is licensed under the Apache 2.0 License — see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgements
-
-- [NousResearch](https://nousresearch.com/) for the original hermes-agent and the Hermes model family
-- The open-source AI community
